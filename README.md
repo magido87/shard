@@ -1,35 +1,73 @@
 # localai
 
-Offline LLM chat for Apple Silicon. No cloud, no telemetry, no history. Runs entirely on your Mac via [MLX](https://github.com/ml-explore/mlx).
+A private AI chat that runs on your Mac. No cloud, no account, no subscription. Everything stays on your computer.
 
 ```
 llm
 ```
 
-## Install
+---
+
+## Quick Start (2 minutes)
+
+**Step 1 — Open Terminal**
+
+Press `Cmd + Space`, type **Terminal**, press Enter.
+
+**Step 2 — Paste this one line**
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/magido87/shard/main/install.sh)
 ```
 
-Open a new terminal and run `llm`. A first-run wizard picks the right model for your hardware.
+Press Enter. It installs everything automatically.
 
-**From source:**
+**Step 3 — Start chatting**
 
-```bash
-git clone https://github.com/magido87/shard.git ~/.localai
-cd ~/.localai && bash setup.sh
+Close Terminal, open it again, then type:
+
+```
+llm
 ```
 
-## Requirements
+A model picker appears. Press Enter to accept the recommended model. It downloads once (a few minutes), then you're chatting.
 
-- macOS 13+ on Apple Silicon (M1 through M4, any variant)
-- Python 3.10+
-- 8 GB unified memory minimum (16 GB+ recommended)
+**That's it. You're running AI locally.**
+
+---
+
+## What You Need
+
+- A Mac with Apple Silicon (M1, M2, M3, or M4 — any model)
+- macOS 13 or newer
+- 8 GB RAM minimum (16 GB recommended for better models)
+
+Not sure what chip you have? Click the Apple menu top-left, click **About This Mac**. It says "Chip: Apple M1/M2/M3/M4".
+
+---
+
+## How It Works
+
+When you run `llm`, it checks your Mac's specs and recommends an AI model that fits. Smaller models are faster but less smart. Bigger models are smarter but need more RAM.
+
+The model downloads from Hugging Face the first time (one-time only). After that, everything runs offline. No internet needed.
+
+---
 
 ## Models
 
-43 models spanning four categories. The picker auto-recommends based on your available RAM.
+43 models across four categories. The picker auto-recommends based on your available RAM.
+
+### Which model should I pick?
+
+| Your Mac | Recommended | Why |
+|----------|-------------|-----|
+| 8 GB RAM | Qwen3 8B | Best balance of speed and quality |
+| 8 GB RAM (tight) | Qwen 3.5 4B | Lighter, still good |
+| 16 GB RAM | Qwen3 14B | Strong all-around |
+| 24 GB+ RAM | Qwen 2.5 32B | Top quality |
+
+Don't worry about picking wrong — you can always switch by running `llm` again.
 
 ### General
 
@@ -65,6 +103,8 @@ cd ~/.localai && bash setup.sh
 
 ### Coding
 
+Models fine-tuned for writing and explaining code.
+
 | Model | Size | Download | Min RAM |
 |-------|------|----------|---------|
 | Qwen Coder 3B | 3B 4-bit | 1.8 GB | 4 GB |
@@ -75,6 +115,8 @@ cd ~/.localai && bash setup.sh
 
 ### Reasoning
 
+Models that think step-by-step before answering. Great for math, logic, and complex questions. The thinking is hidden — you only see the final answer.
+
 | Model | Size | Download | Min RAM |
 |-------|------|----------|---------|
 | DeepSeek R1 1.5B | 1.5B 4-bit | 0.9 GB | 3 GB |
@@ -83,105 +125,110 @@ cd ~/.localai && bash setup.sh
 | DeepSeek R1 14B | 14B 4-bit | 8.3 GB | 12 GB |
 | DeepSeek R1 32B | 32B 4-bit | 18.5 GB | 24 GB |
 
-Reasoning models (DeepSeek R1, Qwen3) use chain-of-thought internally but only display the final answer. The thinking process is filtered automatically.
-
 ### Unfiltered
 
-Available with `llm --unfiltered` (requires confirmation):
+Models with no content filters. Available with `llm --unfiltered` (asks for confirmation first):
 
 Dolphin 3.0 8B, Dolphin 2.9.4 8B, Dolphin Qwen2 7B, Dolphin Mistral 7B, OpenHermes 7B, Lexi Uncensored 8B.
 
-## Usage
+---
+
+## Commands
+
+### Starting up
 
 ```bash
-llm                  # start with last used model
+llm                  # start chatting (picks up where you left off)
 llm --unfiltered     # unlock unfiltered models
-llm --voice          # push-to-talk via mlx-whisper
-llm --zen            # minimal UI, no header or stats
+llm --voice          # talk instead of type (needs mic)
+llm --zen            # clean minimal UI
 llm --focus          # header shown once, then hidden
-llm --model KEY      # force a specific model key
+llm --model KEY      # pick a specific model
 llm-stop             # kill a running session
 ```
 
-### In-chat commands
+### While chatting
 
-| Command | Action |
-|---------|--------|
+| Type this | What it does |
+|-----------|-------------|
 | `q` | Quit |
-| `r` | Reset context |
-| `s` | Settings menu |
-| `h` | Help |
-| `v` | Toggle voice mode |
-| `rensa` / `clear` | Clear screen |
+| `r` | Start fresh (clear conversation memory) |
+| `s` | Open settings |
+| `h` | Show help |
+| `v` | Toggle voice mode on/off |
+| `clear` | Clear the screen |
 
 ### Settings
 
-Press `s` during chat to configure:
+Press `s` during a chat to change:
 
-1. **Temperature** &mdash; 6 presets from 0.05 (frozen) to 1.0 (wild), default 0.72
-2. **Personality** &mdash; Dev, Buddy, Ghost, Sensei, Hacker, Analyst
-3. **Stats** &mdash; compact, full, or off
-4. **UI mode** &mdash; normal, zen, focus
-5. **Privacy** &mdash; toggle privacy mode (nothing saved) and session logging
-6. **Custom instructions** &mdash; appended to system prompt for the session
-7. **Plugins** &mdash; install, enable, disable, uninstall
+1. **Temperature** — how creative the AI is (low = precise, high = creative)
+2. **Personality** — Dev, Buddy, Ghost, Sensei, Hacker, Analyst
+3. **Stats** — show speed/memory info (compact, full, or off)
+4. **UI mode** — normal, zen (minimal), focus
+5. **Privacy** — toggle privacy mode (nothing saved to disk)
+6. **Custom instructions** — tell the AI how to behave
+7. **Plugins** — add extra features
 
-All settings persist in `~/.localai/config.json` (excluded from git).
+Settings are saved between sessions.
+
+---
 
 ## Plugins
 
-Built-in plugin system with install/toggle from the settings menu:
+Press `s` > `7` during chat to manage plugins:
 
-| Plugin | Description |
+| Plugin | What it does |
 |--------|-------------|
-| Web Search | Search via DuckDuckGo |
-| Code Runner | Execute Python/shell from responses |
-| File Reader | Load local files into context (RAG) |
-| Text-to-Speech | Read responses via macOS `say` |
-| Shell Assistant | Suggest and run shell commands |
-| Summarizer | Summarize text or fetch URLs |
+| Web Search | Search DuckDuckGo from chat |
+| Code Runner | Run Python/shell code from responses |
+| File Reader | Load local files into the conversation |
+| Text-to-Speech | AI reads responses out loud |
+| Shell Assistant | Suggests and runs terminal commands |
+| Summarizer | Summarize text or web pages |
 | Translator | Auto-translate responses |
-| Clipboard | Copy last response to clipboard |
+| Clipboard | Copy the last response |
+
+---
 
 ## Themes
 
-Four color themes, switchable in settings: **Ocean** (default), **Dusk**, **Mono**, **Forest**.
+Four color themes: **Ocean** (default), **Dusk**, **Mono**, **Forest**. Change in settings.
 
 ## Voice Mode
 
-Requires additional dependencies:
+Talk to the AI instead of typing. Requires a one-time setup:
 
 ```bash
 pip install mlx-whisper sounddevice
 ```
 
-Runs Whisper locally via MLX. Press Enter to stop recording; transcription feeds directly into the chat.
+Uses Whisper (runs locally, not cloud). Press Enter to stop recording.
+
+---
 
 ## Privacy
 
-- No telemetry or network calls during chat
-- No chat history written to disk (unless session logging is explicitly enabled)
+- Zero telemetry — no data leaves your Mac
+- No chat history saved (unless you turn on session logging)
 - Privacy mode disables all config saving
-- Model weights download from Hugging Face on first use only
+- Models download from Hugging Face once, then it's fully offline
 
-## Project structure
+---
 
+## Install from Source
+
+If you prefer to clone the repo manually:
+
+```bash
+git clone https://github.com/magido87/shard.git ~/.localai
+cd ~/.localai && bash setup.sh
 ```
-~/.localai/
-  chat.py          Main app: model picker, chat loop, progress bar, UI
-  models.py        Model registry (43 models) and hardware matching
-  ui.py            ANSI themes, stream highlighter, think filter
-  config.py        Persistent JSON config
-  detect.py        Hardware detection (chip, RAM, disk, memory pressure)
-  agent.py         Session logging (opt-in only)
-  voice.py         Push-to-talk via mlx-whisper (optional)
-  plugins.py       Plugin loader and hook dispatcher
-  plugins/         Plugin implementations
-  install.sh       One-command remote installer
-  setup.sh         Local setup: venv, deps, ~/bin wrappers
-  llm.sh           ~/bin/llm wrapper
-  llm-stop.sh      ~/bin/llm-stop wrapper
-  wipe_session.sh  Session cleanup
+
+## Uninstall
+
+```bash
+rm -rf ~/.localai ~/bin/llm ~/bin/llm-stop
 ```
 
 ## License
