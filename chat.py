@@ -172,7 +172,18 @@ def _load_model_with_progress(model_key: str):
     def _do_load():
         try:
             from mlx_lm import load
-            result["model"], result["tokenizer"] = load(entry["id"])
+            try:
+                result["model"], result["tokenizer"] = load(entry["id"])
+            except ValueError as ve:
+                if "parameters not in model" not in str(ve):
+                    raise
+                # Multimodal model — reload ignoring extra vision weights
+                from mlx_lm.utils import _download, load_model, load_tokenizer
+                model_path = _download(entry["id"])
+                model, config = load_model(model_path, lazy=False, strict=False)
+                tokenizer = load_tokenizer(model_path)
+                result["model"] = model
+                result["tokenizer"] = tokenizer
         except Exception as e:
             result["error"] = e
         finally:

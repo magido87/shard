@@ -29,21 +29,25 @@ cd ~/.localai && bash setup.sh
 
 ## Models
 
-27 models spanning four categories. The picker auto-recommends based on your available RAM.
+43 models spanning four categories. The picker auto-recommends based on your available RAM.
 
 ### General
 
 | Model | Size | Download | Min RAM |
 |-------|------|----------|---------|
 | Qwen 2.5 0.5B | 0.5B 4-bit | 0.4 GB | 2 GB |
+| Qwen 3.5 0.8B | 0.8B 4-bit | 0.6 GB | 2 GB |
 | SmolLM2 1.7B | 1.7B | 3.4 GB | 4 GB |
 | Qwen 2.5 3B | 3B 4-bit | 1.8 GB | 4 GB |
+| Qwen 3.5 2B | 2B 4-bit | 1.7 GB | 4 GB |
 | Phi-4 Mini | 3.8B 4-bit | 2.3 GB | 4 GB |
 | Phi-3.5 Mini | 3.8B 4-bit | 2.2 GB | 4 GB |
 | Llama 3.2 3B | 3B 4-bit | 1.9 GB | 4 GB |
 | Gemma 3 4B | 4B 4-bit | 3.0 GB | 5 GB |
+| Qwen 3.5 4B | 4B 4-bit | 2.5 GB | 5 GB |
 | Qwen3 8B | 8B 4-bit | 5.0 GB | 6 GB |
 | Dolphin 7B | 7B 4-bit | 4.3 GB | 6 GB |
+| Qwen 3.5 9B | 9B 4-bit | 6.0 GB | 8 GB |
 | Mistral 7B | 7B 4-bit | 4.1 GB | 8 GB |
 | Llama 3.1 8B | 8B 4-bit | 4.9 GB | 8 GB |
 | Llama 3.2 8B | 8B 4-bit | 4.9 GB | 8 GB |
@@ -165,7 +169,7 @@ Runs Whisper locally via MLX. Press Enter to stop recording; transcription feeds
 ```
 ~/.localai/
   chat.py          Main app: model picker, chat loop, progress bar, UI
-  models.py        Model registry (27 models) and hardware matching
+  models.py        Model registry (43 models) and hardware matching
   ui.py            ANSI themes, stream highlighter, think filter
   config.py        Persistent JSON config
   detect.py        Hardware detection (chip, RAM, disk, memory pressure)
