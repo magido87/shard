@@ -56,7 +56,7 @@ MODELS: dict = {
         "prompt_style": "qwen",
     },
     "qwen35_08b": {
-        "id":           "mlx-community/Qwen3.5-0.8B-Instruct-4bit",
+        "id":           "mlx-community/Qwen3.5-0.8B-4bit",
         "label":        "Qwen 3.5 0.8B",
         "size":         "0.8B 4-bit",
         "min_ram":      2,
@@ -69,7 +69,7 @@ MODELS: dict = {
         "prompt_style": "qwen",
     },
     "qwen35_2b": {
-        "id":           "mlx-community/Qwen3.5-2B-Instruct-4bit",
+        "id":           "mlx-community/Qwen3.5-2B-4bit",
         "label":        "Qwen 3.5 2B",
         "size":         "2B 4-bit",
         "min_ram":      3,
@@ -82,7 +82,7 @@ MODELS: dict = {
         "prompt_style": "qwen",
     },
     "qwen35_4b": {
-        "id":           "mlx-community/Qwen3.5-4B-Instruct-4bit",
+        "id":           "mlx-community/Qwen3.5-4B-4bit",
         "label":        "Qwen 3.5 4B",
         "size":         "4B 4-bit",
         "min_ram":      5,
@@ -95,7 +95,7 @@ MODELS: dict = {
         "prompt_style": "qwen",
     },
     "qwen35_9b": {
-        "id":           "mlx-community/Qwen3.5-9B-Instruct-4bit",
+        "id":           "mlx-community/Qwen3.5-9B-4bit",
         "label":        "Qwen 3.5 9B",
         "size":         "9B 4-bit",
         "min_ram":      7,
