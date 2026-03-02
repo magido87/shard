@@ -27,6 +27,7 @@ MODELS: dict = {
         "kv":           2048,
         "tokens":       1024,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     "deepseek_r1_1_5b": {
         "id":           "mlx-community/DeepSeek-R1-Distill-Qwen-1.5B-4bit",
@@ -80,6 +81,7 @@ MODELS: dict = {
         "kv":           2048,
         "tokens":       1024,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     # ── Small (4-8B) — workhorses ────────────────────────────────
     "phi4mini": {
@@ -146,6 +148,7 @@ MODELS: dict = {
         "kv":           2048,
         "tokens":       1024,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     "qwen25_coder_3b": {
         "id":           "mlx-community/Qwen2.5-Coder-3B-Instruct-4bit",
@@ -186,6 +189,7 @@ MODELS: dict = {
         "kv":           2048,
         "tokens":       1024,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     "dolphin7b": {
         "id":           "mlx-community/dolphin-2.9.2-qwen2-7b-4bit",
