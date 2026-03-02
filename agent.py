@@ -1,58 +1,59 @@
+"""Interaction logging for localai — JSONL, opt-in only."""
+
 import json
-import os
 from datetime import datetime
-from typing import Any, Dict, List
+from pathlib import Path
 
-LOG_DIR = os.path.expanduser("~/.localai/logs")
+LOGS_DIR = Path.home() / ".localai" / "logs"
 
-_enabled = False
+_enabled: bool = False
+_session_path: Path | None = None
 
 
 def set_logging(enabled: bool) -> None:
-    global _enabled
+    global _enabled, _session_path
     _enabled = enabled
+    if enabled and _session_path is None:
+        LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        _session_path = LOGS_DIR / f"session_{ts}.jsonl"
 
 
 def log_interaction(
     query: str,
-    steps: List[Dict[str, Any]],
-    final_answer: str,
-    total_steps: int,
-) -> str:
-    """Write one turn to session log if logging is enabled, otherwise no-op."""
-    if not _enabled:
-        return ""
+    answer: str,
+    metadata: dict | None = None,
+) -> None:
+    """Append one JSONL line to the session log if logging is enabled."""
+    if not _enabled or _session_path is None:
+        return
     try:
-        os.makedirs(LOG_DIR, exist_ok=True)
-        today = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        path = os.path.join(LOG_DIR, f"{today}.jsonl")
-        entry = {
-            "ts": datetime.now().isoformat(),
-            "query": query,
-            "answer": final_answer,
+        entry: dict = {
+            "ts":     datetime.now().isoformat(),
+            "query":  query,
+            "answer": answer,
         }
-        with open(path, "a") as f:
+        if metadata:
+            entry["meta"] = metadata
+        with _session_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-        return path
     except Exception:
-        return ""
+        pass
 
 
-def list_logs() -> list:
-    """Return list of log file paths, newest first."""
-    if not os.path.isdir(LOG_DIR):
+def list_logs() -> list[Path]:
+    """Return list of log file Paths, newest first."""
+    if not LOGS_DIR.is_dir():
         return []
-    files = [os.path.join(LOG_DIR, f) for f in os.listdir(LOG_DIR) if f.endswith(".jsonl")]
-    files.sort(reverse=True)
-    return files
+    return sorted(LOGS_DIR.glob("*.jsonl"), reverse=True)
 
 
 def delete_all_logs() -> int:
-    """Delete all session logs. Returns count of deleted files."""
+    """Delete all session log files. Returns count deleted."""
     files = list_logs()
     for f in files:
         try:
-            os.remove(f)
+            f.unlink()
         except OSError:
             pass
     return len(files)

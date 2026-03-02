@@ -1,9 +1,9 @@
-venv/
 __pycache__/
+plugins/__pycache__/
 *.pyc
 *.pid
 *.log
+venv/
 logs/
-screenshots/
-.DS_Store
 config.json
+.DS_Store

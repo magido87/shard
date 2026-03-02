@@ -10,153 +10,184 @@ llm
 
 ---
 
+## What it is
+
+localai is a minimal terminal chat client for running open-source LLMs fully offline on Apple Silicon via [MLX](https://github.com/ml-explore/mlx). It detects your chip and RAM, recommends a model that fits, downloads it once, and then runs entirely on your GPU with no network calls. Streaming output, 4 themes, 6 personalities, 8 plugins, and push-to-talk voice — all in a single `llm` command.
+
+---
+
 ## Install
 
-**One command** (replace `YOUR_USERNAME` with the repo owner if you forked):
+**One command:**
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/magido87/shard/master/install.sh)
 ```
 
-Then open a new terminal tab and run `llm`. First time you get a short wizard (model + personality); after that you just type `llm` and chat.
+Open a new terminal tab and run `llm`. The first launch walks you through model selection; after that just type `llm` and chat.
 
-**Alternativt — git:**
+**Manual (git):**
 
 ```bash
-git clone https://github.com/magido87/shard.git
-cd shard
+git clone https://github.com/magido87/shard.git localai
+cd localai
 bash setup.sh
 ```
 
-**Alternativt — Homebrew** (when tap is available):
-
-```bash
-brew tap magido87/shard && brew install shard
-```
-
-Setup detects your Mac (M1–M5, any RAM), suggests a model that fits, and installs the `llm` command in `~/bin/`. Restart the terminal or run `source ~/.zshrc` if `llm` is not found.
-
----
-
-## Features
-
-- **100% offline** — no network calls after model download
-- **No chat history** — nothing is ever written to disk
-- **Hardware-aware** — setup detects your chip and RAM, recommends what fits
-- **Multiple models** — from compact 8B to abliterated 32B, matched to your machine
-- **11 personalities** — from terse hacker to philosopher, configurable per session
-- **Persistent config** — theme, personality and temperature survive restarts
-- **Unfiltered mode** — explicit opt-in for uncensored models (`llm --unfiltered`)
-- **Voice mode** — optional offline push-to-talk via mlx-whisper (`llm --voice`)
-- **Pure CLI** — ANSI colors, streaming output, no GUI, no Electron
+Setup detects your Mac, suggests a model that fits, and installs the `llm` command in `~/bin/`. Run `source ~/.zshrc` if `llm` is not found immediately.
 
 ---
 
 ## Requirements
 
-- **macOS 13 Ventura** or later
-- **Apple Silicon** (M1, M2, M3, M4, M5 — any variant)
-- **Python 3.10+**
-- **8 GB unified memory** minimum (16 GB+ recommended)
-
----
-
-## Models
-
-Setup auto-detects your RAM and recommends a model that fits. A few common options:
-
-| Key | Model | RAM needed | Notes |
-|-----|-------|-----------|-------|
-| `dolphin` | Dolphin 3.0 Llama 3.1 8B 4bit | ~5 GB | Fast default for 8–16 GB |
-| `q14` | Qwen3-14B 4bit | ~10 GB | Great balance for 16 GB |
-| `q32_3` | Qwen3-32B 3bit | ~14 GB | 32B quality, 16 GB friendly |
-| `q32` | Qwen3-32B 4bit | ~20 GB | Recommended for 32 GB+ |
-| `hui27` | Huihui-Qwen3.5-27B abliterated | ~16 GB | Unfiltered mode only |
-| `hui35` | Huihui-Qwen3.5-35B-A3B abliterated | ~20 GB | Unfiltered MoE, via `--unfiltered` |
-
-Exact IDs live in `chat.py` and may evolve over time; setup always recommends something sane for your machine automatically.
+| Requirement | Minimum |
+|-------------|---------|
+| macOS | 13 Ventura or later |
+| Chip | Apple Silicon (M1 or later, any variant) |
+| Python | 3.10+ |
+| RAM | 8 GB (16 GB+ recommended) |
 
 ---
 
 ## Usage
 
 ```bash
-llm                  # start with last used model and config
-llm --unfiltered     # unlock abliterated models (confirmation required)
-llm --voice          # enable push-to-talk voice input (mlx-whisper required)
+llm                  # start with last used model and settings
+llm --model phi4mini # skip picker, load a specific model
+llm --unfiltered     # unlock uncensored models (confirmation required)
+llm --zen            # minimal UI: no header, no stats
+llm --focus          # header on start only
+llm --voice          # enable push-to-talk voice input
 llm-stop             # kill a running session
 ```
 
-### In-chat commands
+### CLI flags
 
-| Command | Action |
-|---------|--------|
-| `q` | Quit |
-| `r` | Reset chat (clear context) |
-| `s` | Settings (temp, personality, custom instructions) |
-| `h` | Help |
-| `rensa` / `clear` | Clear screen |
-| `/theme` | Switch color theme |
+| Flag | Effect |
+|------|--------|
+| `--model KEY` | Skip picker, load model by key (e.g. `phi4mini`, `llama8b`) |
+| `--unfiltered` | Show uncensored models; prompts for confirmation |
+| `--zen` | No header, no stats |
+| `--focus` | Header shown once at startup only |
+| `--voice` | Enable push-to-talk on launch |
 
 ---
 
-## Voice Mode
+## Models
 
-Voice mode requires an optional install:
+38 models across 4 categories. Setup auto-recommends based on your RAM.
+
+| Category | Count | RAM range | Examples |
+|----------|-------|-----------|---------|
+| General | 22 | 2–48 GB | Qwen3 0.5B → 235B MoE, Llama 3.3 70B, Gemma 3 27B |
+| Coding | 5 | 3–24 GB | Qwen Coder 3B/7B/14B/32B, DeepSeek Coder 7B |
+| Reasoning | 5 | 3–20 GB | DeepSeek R1 1.5B/8B/14B/32B, Phi-4 14B |
+| Unfiltered | 6 | 5–24 GB | Dolphin, OpenHermes, Lexi variants |
+
+### RAM tiers
+
+| Tier | RAM needed | Example models |
+|------|-----------|----------------|
+| Tiny | 2–4 GB | Qwen3 0.5B, SmolLM2 1.7B, Qwen3 3B, DeepSeek R1 1.5B |
+| Small | 4–8 GB | Phi-4 Mini, Gemma 3 4B, Llama 3.1 8B, Qwen3 8B |
+| Medium | 10–14 GB | Gemma 3 12B, Mistral Nemo 12B, Phi-4 14B, Qwen3 14B |
+| Large | 14–48 GB | Gemma 3 27B, Mistral Small 24B, Qwen3 30B MoE, Llama 3.3 70B |
+
+All models are 4-bit quantized MLX builds from [mlx-community](https://huggingface.co/mlx-community) unless noted. They download once to `~/.cache/huggingface/` and run fully offline after that.
+
+---
+
+## Plugins
+
+8 bundled plugins, installed and toggled from the settings menu (`s` → Plugins).
+
+| Plugin | Commands | Deps |
+|--------|----------|------|
+| Web Search | `/search <query>`, `search:` prefix | duckduckgo-search |
+| Code Runner | `/run <python>`, `/shell <cmd>` | none |
+| File Reader | `/read <path>`, `/files`, `/clearfiles` | none |
+| Text-to-Speech | `/tts` (toggle), `/say <text>` | none (macOS say) |
+| Shell Assistant | `/sh <command>` | none |
+| Summarizer | `/summarize <url\|text>`, `summarize:` prefix | requests |
+| Translator | `/translate <lang>`, `/translate off` | none |
+| Clipboard | `/copy` | none (macOS pbcopy) |
+
+---
+
+## In-chat commands
+
+| Input | Action |
+|-------|--------|
+| `q` / `quit` / `exit` | Quit |
+| `r` / `reset` | Reset context, clear GPU cache |
+| `s` | Settings menu |
+| `h` | Show help bar |
+| `v` | Toggle voice mode |
+| `rensa` / `clear` / `cls` | Clear screen |
+| `/search`, `/run`, `/sh`, etc. | Plugin commands (if installed) |
+
+---
+
+## Themes
+
+Switch theme in settings (`s`):
+
+| Theme | Description |
+|-------|-------------|
+| `ocean` | Deep blue — default |
+| `dusk` | Purple/gray |
+| `mono` | Monochrome |
+| `forest` | Green |
+
+---
+
+## Personalities
+
+Switch personality in settings (`s`):
+
+| # | Name | Style |
+|---|------|-------|
+| 1 | Dev | Terse, technical, code-first |
+| 2 | Buddy | Friendly, conversational |
+| 3 | Ghost | Ultra-brief, one sentence |
+| 4 | Sensei | Detailed teacher, step-by-step |
+| 5 | Hacker | Security and ops focus |
+| 6 | Analyst | Structured, analytical |
+
+---
+
+## Voice mode
+
+Requires optional dependencies (~500 MB):
 
 ```bash
 bash setup.sh --voice
 ```
 
-This installs `mlx-whisper` and `sounddevice` (~500 MB). Everything runs offline.
-
-Start with:
-```bash
-llm --voice
-```
-
-Hold a key to talk, release to transcribe. Output goes straight into the chat.
+Then launch with `llm --voice`. Hold a key to record, release to transcribe via [mlx-whisper](https://github.com/ml-explore/mlx-examples/tree/main/whisper). Everything runs offline.
 
 ---
 
-## Unfiltered Mode
+## Unfiltered mode
 
-Unfiltered mode unlocks abliterated models (huihui-27B, huihui-32B) that are not shown in standard mode.
+Unlocks uncensored models not shown in the standard picker:
 
 ```bash
 llm --unfiltered
 ```
 
-You will be prompted to confirm. No extra config needed.
+You will be prompted to type `UNLOCK` to confirm. No extra config needed.
 
 ---
 
 ## Privacy
 
-- **No logging**: `agent.py` exists but logging is disabled by design
-- **No telemetry**: zero network calls during chat
-- **No history file**: conversation lives only in RAM, gone on exit
-- **No model weights in this repo**: all models download from Hugging Face on first setup
+- **No logging** — conversations live only in RAM, gone on exit
+- **No telemetry** — zero network calls during chat
+- **No history file** — nothing is written to disk by default
+- **Privacy mode** — enable in settings to block all config writes too
 
----
-
-## Config
-
-Settings are saved to `~/.localai/config.json` (excluded from git):
-
-```json
-{
-  "model": "q32",
-  "theme": "neon",
-  "personality": 3,
-  "temp": 0.72
-}
-```
-
-Wipe everything:
-```bash
-bash wipe_session.sh
-```
+Session logging is opt-in via settings and writes JSONL to `~/.localai/logs/`.
 
 ---
 
@@ -164,33 +195,18 @@ bash wipe_session.sh
 
 ```
 localai/
-├── install.sh       One-command install (curl) — clone/update + setup.sh
-├── setup.sh         Install — venv, deps, hardware check, model download, voice opt-in
-├── chat.py          Main app — model picker, chat loop, UI, themes, personalities
+├── chat.py          Entry point — model picker, chat loop, UI, commands
+├── models.py        38-model registry, RAM matching, category grouping
+├── plugins.py       Plugin registry, loader, installer, hook dispatchers
+├── plugins/         8 bundled plugin files
 ├── config.py        Persistent config (~/.localai/config.json)
-├── voice.py         Optional voice mode (mlx-whisper, import-guarded)
-├── detect.py        Hardware detection — chip, RAM, disk, swap risk (stdlib only)
-├── agent.py         Logging stub (disabled for privacy)
-├── llm.sh           ~/bin/llm wrapper source
-├── llm-stop.sh      ~/bin/llm-stop wrapper source
-├── wipe_session.sh  Safe session cleanup
-└── docs/
-    └── BREW_TAP.md  Homebrew tap formula sketch (optional)
+├── detect.py        Hardware detection — chip, RAM, disk, pressure
+├── ui.py            4 themes, StreamHighlighter, ANSI helpers
+├── voice.py         Optional push-to-talk (mlx-whisper)
+├── agent.py         Session logging (opt-in JSONL)
+├── setup.sh         Deploy to ~/.localai/ + write ~/bin/llm wrappers
+└── install.sh       One-liner bootstrap (curl | bash)
 ```
-
----
-
-## Hardware tiers
-
-Setup auto-detects and recommends:
-
-| RAM | Recommended pack | Notes |
-|-----|-----------------|-------|
-| 8 GB | Minimal: Dolphin 8B or Qwen3.5-14B 3bit | Swap risk with 14B |
-| 16 GB | Standard: Qwen3.5-14B 4bit or Qwen3-32B 3bit | Good balance |
-| 32 GB | Balanced: Qwen3-32B 4bit or Huihui-27B | Full quality |
-| 64 GB | Full: Huihui-32B 4bit | Uncensored at full quality |
-| 96 GB+ | Max: Qwen3-32B 8bit or MoE variants | No constraints |
 
 ---
 

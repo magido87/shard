@@ -11,7 +11,7 @@ Thanks for your interest. This is a CLI-first, offline-only project — keep tha
 
 ## What's welcome
 
-- New model entries in `MODELS` (with correct HuggingFace ID and `min_ram`)
+- New model entries in `MODELS` in `models.py` (with correct HuggingFace ID and all required keys)
 - Bug fixes and edge case handling
 - New personalities in `PERSONALITIES`
 - Voice backend alternatives via `voice.py` (keep the interface: `push_to_talk() -> str`)
@@ -28,21 +28,24 @@ Thanks for your interest. This is a CLI-first, offline-only project — keep tha
 ## How to add a model
 
 1. Verify the model ID exists on Hugging Face and is MLX-compatible
-2. Add an entry to `MODELS` in `chat.py`:
+2. Add an entry to `MODELS` in `models.py`:
    ```python
    "my_key": {
-       "id":      "mlx-community/ModelName-4bit",
-       "label":   "Model Name  ·  Size  ·  quant",
-       "size":    "14B",
-       "prompt":  "qwen",   # or "dolphin" for Llama-based
-       "theme":   "ocean",
-       "kv":      2048,
-       "tokens":  1024,
-       "min_ram": 12,        # GB required
-       "profile": "safe",    # or "unfiltered"
+       "id":           "mlx-community/ModelName-4bit",
+       "label":        "Model Name",
+       "size":         "14B",
+       "min_ram":      12,           # GB required to run safely
+       "dl_size":      8.5,          # download size in GB (float)
+       "profile":      "safe",       # "safe" or "unfiltered"
+       "category":     "general",    # "general", "coding", "reasoning", "unfiltered"
+       "desc":         "Short description",
+       "kv":           4096,         # context window in tokens
+       "tokens":       2048,         # max new tokens per response
+       "prompt_style": "qwen",       # "qwen", "llama", "phi", "gemma", "deepseek", etc.
    },
    ```
-3. Add the same ID to `setup.sh`'s `MODEL_LIST` array
+3. Pick `category` from: `general`, `coding`, `reasoning`, `unfiltered`
+4. `prompt_style` controls the chat template — match it to the model family
 
 ## Dev setup
 

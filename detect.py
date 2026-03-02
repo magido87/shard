@@ -1,114 +1,82 @@
-"""Hardware detection for LocalAI — stdlib only, runs before venv setup."""
+"""Hardware detection for localai — Apple Silicon."""
 
-import json
 import os
 import platform
-import re
-import shutil
 import subprocess
-import sys
 
 
-def _sysctl(key: str) -> str:
+def chip_name() -> str:
+    """Return human-readable chip name, e.g. 'M3 Pro'. Falls back to 'Apple Silicon'."""
     try:
-        return subprocess.check_output(
-            ["sysctl", "-n", key], text=True, stderr=subprocess.DEVNULL
+        raw = subprocess.check_output(
+            ["sysctl", "-n", "machdep.cpu.brand_string"],
+            text=True, stderr=subprocess.DEVNULL,
         ).strip()
+        if raw:
+            return raw
     except Exception:
-        return ""
-
-
-def detect() -> dict:
-    """Return hardware info as a dict. Uses stdlib only."""
-    chip = _sysctl("machdep.cpu.brand_string") or _sysctl("hw.model") or "Unknown"
-
-    mem_str = _sysctl("hw.memsize")
+        pass
     try:
-        ram_gb = int(mem_str) / (1024 ** 3)
-    except (ValueError, TypeError):
-        ram_gb = 0.0
-
-    macos = platform.mac_ver()[0]
-    try:
-        macos_major = int(macos.split(".")[0])
+        model = subprocess.check_output(
+            ["sysctl", "-n", "hw.model"],
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+        if model:
+            return model
     except Exception:
-        macos_major = 0
+        pass
+    return "Apple Silicon"
 
-    home = os.path.expanduser("~")
+
+def ram_gb() -> int:
+    """Return total RAM in GB (integer)."""
     try:
-        disk_free_gb = shutil.disk_usage(home).free / (1024 ** 3)
+        import psutil
+        return psutil.virtual_memory().total // (1024 ** 3)
     except Exception:
-        disk_free_gb = 0.0
+        pass
+    try:
+        raw = subprocess.check_output(
+            ["sysctl", "-n", "hw.memsize"],
+            text=True, stderr=subprocess.DEVNULL,
+        ).strip()
+        return int(raw) // (1024 ** 3)
+    except Exception:
+        return 8
 
-    # Future-proof: match M1, M2, …, M5, M10, etc.
-    chip_gen = ""
-    m = re.search(r"M(\d+)\s", chip) or re.search(r"M(\d+)$", chip) or re.search(r"M(\d+)", chip)
-    if m:
-        chip_gen = f"M{m.group(1)}"
 
-    chip_tier = ""
-    for t in ("Ultra", "Max", "Pro"):
-        if t in chip:
-            chip_tier = t
-            break
+def os_version() -> str:
+    """Return macOS version string, e.g. '15.3'."""
+    return platform.mac_ver()[0] or "unknown"
 
-    is_apple_silicon = platform.machine() == "arm64" and ("Apple" in chip or bool(chip_gen))
-    swap_risk = ram_gb < 24
+
+def _pressure(ram_pct: float, swap_bytes: int) -> str:
+    """Return memory pressure level: 'low', 'medium', or 'high'."""
+    swap_gb = swap_bytes / (1024 ** 3)
+    if ram_pct > 85 or swap_gb > 3:   return "high"
+    if ram_pct > 65 or swap_gb > 0.5: return "medium"
+    return "low"
+
+
+def hardware_summary() -> dict:
+    """Return dict with chip, ram, os, and extended health keys."""
+    import psutil
+    import shutil
+    vm   = psutil.virtual_memory()
+    swap = psutil.swap_memory()
+    disk = shutil.disk_usage(os.path.expanduser("~"))
 
     return {
-        "chip":             chip,
-        "chip_gen":         chip_gen,
-        "chip_tier":        chip_tier,
-        "ram_gb":           round(ram_gb, 1),
-        "ram_gb_int":       int(ram_gb),
-        "macos":            macos,
-        "macos_major":      macos_major,
-        "disk_free_gb":     round(disk_free_gb, 1),
-        "swap_risk":        swap_risk,
-        "is_apple_silicon": is_apple_silicon,
+        # existing
+        "chip":          chip_name(),
+        "ram":           int(vm.total // (1024 ** 3)),
+        "os":            os_version(),
+        # new
+        "ram_available": round(vm.available / (1024 ** 3), 1),
+        "ram_used":      round(vm.used      / (1024 ** 3), 1),
+        "ram_pct":       vm.percent,
+        "swap_used":     round(swap.used    / (1024 ** 3), 1),
+        "swap_total":    round(swap.total   / (1024 ** 3), 1),
+        "disk_free":     round(disk.free    / (1024 ** 3), 1),
+        "pressure":      _pressure(vm.percent, swap.used),
     }
-
-
-def tier(ram_gb: float) -> str:
-    """Map RAM to model tier name. Works for M1–M5+ and 8–512 GB."""
-    if ram_gb >= 96:  return "max"
-    if ram_gb >= 64:  return "full"
-    if ram_gb >= 32:  return "balanced"
-    if ram_gb >= 16:  return "standard"
-    if ram_gb >= 8:   return "minimal"
-    return "micro"
-
-
-_TIER_LABELS = {
-    "micro":    "Micro    · <8 GB  — Phi-4 mini, Gemma 3 4B (tiny models only)",
-    "minimal":  "Minimal  · 8 GB   — Dolphin 8B, Mistral 7B, Qwen3-8B",
-    "standard": "Standard · 16 GB  — Gemma 12B, Qwen3-14B, Qwen3-32B 3bit (incl. M5)",
-    "balanced": "Balanced · 32 GB  — Qwen3-32B 4bit, Mistral-24B, Huihui-27B",
-    "full":     "Full     · 64 GB  — Llama 3.3 70B 4bit, large models",
-    "max":      "Max      · 96 GB+ — Multiple large models simultaneously",
-}
-
-
-def report(info: dict) -> str:
-    """Human-readable hardware report for setup.sh output."""
-    t = tier(info["ram_gb"])
-    lines = [
-        f"  Chip    : {info['chip']}",
-        f"  RAM     : {info['ram_gb_int']} GB unified memory",
-        f"  macOS   : {info['macos']}",
-        f"  Disk    : {info['disk_free_gb']:.0f} GB free",
-        f"  Tier    : {_TIER_LABELS[t]}",
-    ]
-    if info["swap_risk"]:
-        lines.append("  Warning : Low RAM — large models may trigger swap and throttle")
-    if not info["is_apple_silicon"]:
-        lines.append("  Warning : Not Apple Silicon — MLX requires M1 or later")
-    return "\n".join(lines)
-
-
-if __name__ == "__main__":
-    info = detect()
-    if "--json" in sys.argv:
-        print(json.dumps(info, indent=2))
-    else:
-        print(report(info))
