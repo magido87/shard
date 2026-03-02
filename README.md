@@ -6,6 +6,12 @@ A private AI chat that runs on your Mac. No cloud, no account, no subscription. 
 llm
 ```
 
+![Model picker](assets/picker.png)
+
+![Chat](assets/chat.png)
+
+![Settings](assets/settings.png)
+
 ---
 
 ## Quick Start (2 minutes)
