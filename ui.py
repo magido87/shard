@@ -252,3 +252,69 @@ class StreamHighlighter:
             body = "\n".join(f"  {gr}{ln}{rs}" for ln in code.splitlines()) + "\n"
 
         return lang_label + body + sep
+
+
+class ThinkFilter:
+    """Strips <think>...</think> reasoning blocks from streaming LLM output.
+
+    Usage:
+        f = ThinkFilter()
+        out = f.feed(chunk)   # returns displayable text (think blocks removed)
+        tail = f.flush()      # call after loop — returns any buffered non-think text
+    """
+
+    OPEN  = "<think>"
+    CLOSE = "</think>"
+
+    def __init__(self, start_in_think: bool = False) -> None:
+        self._in_think: bool = start_in_think
+        self._buf: str = ""   # lookahead buffer for partial tag detection
+        self._strip_nl: bool = False  # strip leading newlines on next feed
+
+    def feed(self, chunk: str) -> str:
+        out: list[str] = []
+        self._buf += chunk
+        # Strip leading newlines left over from a just-closed think block
+        if self._strip_nl:
+            self._buf = self._buf.lstrip("\n")
+            self._strip_nl = False
+        while self._buf:
+            if not self._in_think:
+                idx = self._buf.find(self.OPEN)
+                if idx == -1:
+                    # No opening tag — safe to output all but the last 6 chars
+                    # (could be start of "<think>")
+                    keep = len(self.OPEN) - 1
+                    safe = len(self._buf) - keep
+                    if safe > 0:
+                        out.append(self._buf[:safe])
+                        self._buf = self._buf[safe:]
+                    break
+                else:
+                    out.append(self._buf[:idx])
+                    self._buf = self._buf[idx + len(self.OPEN):]
+                    self._in_think = True
+            else:
+                idx = self._buf.find(self.CLOSE)
+                if idx == -1:
+                    # Discard everything except possible partial closing tag
+                    keep = len(self.CLOSE) - 1
+                    self._buf = self._buf[-keep:] if len(self._buf) > keep else self._buf
+                    break
+                else:
+                    self._buf = self._buf[idx + len(self.CLOSE):]
+                    self._in_think = False
+                    # Strip newlines immediately after </think>; if the buffer
+                    # is now empty, carry the strip over to the next feed()
+                    self._buf = self._buf.lstrip("\n")
+                    if not self._buf:
+                        self._strip_nl = True
+        return "".join(out)
+
+    def flush(self) -> str:
+        """Return any buffered non-think text and reset state."""
+        out = "" if self._in_think else self._buf
+        self._buf = ""
+        self._in_think = False
+        self._strip_nl = False
+        return out

@@ -27,6 +27,7 @@ MODELS: dict = {
         "kv":           2048,
         "tokens":       1024,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     "smollm2_1_7b": {
         "id":           "mlx-community/SmolLM2-1.7B-Instruct",
@@ -132,6 +133,20 @@ MODELS: dict = {
         "kv":           2048,
         "tokens":       1024,
         "prompt_style": "qwen",
+        "think_prefill": True,
+    },
+    "dolphin7b": {
+        "id":           "mlx-community/dolphin-2.9.2-qwen2-7b-4bit",
+        "label":        "Dolphin 7B",
+        "size":         "7B 4-bit",
+        "min_ram":      6,
+        "dl_size":      "4.3GB",
+        "profile":      "safe",
+        "category":     "general",
+        "desc":         "uncensored, Qwen2 base",
+        "kv":           2048,
+        "tokens":       1024,
+        "prompt_style": "qwen",
     },
     "qwen25_coder_7b": {
         "id":           "mlx-community/Qwen2.5-Coder-7B-Instruct-4bit",
@@ -223,6 +238,7 @@ MODELS: dict = {
         "kv":           2048,
         "tokens":       1024,
         "prompt_style": "llama",
+        "think_prefill": True,
     },
     # ── Medium (12-14B) — strong performers ──────────────────────
     "mistral_nemo": {
@@ -289,6 +305,7 @@ MODELS: dict = {
         "kv":           1536,
         "tokens":       768,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     "qwen25_14b": {
         "id":           "mlx-community/Qwen2.5-14B-Instruct-4bit",
@@ -315,6 +332,7 @@ MODELS: dict = {
         "kv":           1536,
         "tokens":       768,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     # ── Large (20B+) — high-end Macs ────────────────────────────
     "qwen3_30b_moe": {
@@ -329,6 +347,7 @@ MODELS: dict = {
         "kv":           1536,
         "tokens":       768,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     "gemma3_27b": {
         "id":           "mlx-community/gemma-3-27b-it-4bit",
@@ -394,6 +413,7 @@ MODELS: dict = {
         "kv":           1024,
         "tokens":       512,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     "llama33_70b": {
         "id":           "mlx-community/Llama-3.3-70B-Instruct-4bit",
@@ -420,6 +440,7 @@ MODELS: dict = {
         "kv":           1024,
         "tokens":       512,
         "prompt_style": "qwen",
+        "think_prefill": True,
     },
     # ── Unfiltered (require --unfiltered + UNLOCK) ───────────────
     "dolphin8b": {

@@ -20,11 +20,6 @@ def on_command(cmd: str, context: dict) -> bool:
     if cmd.startswith("/read "):
         path = cmd[6:].strip()
         path = os.path.expanduser(path)
-        real = os.path.realpath(path)
-        BLOCKED = [os.path.expanduser("~/.ssh"), os.path.expanduser("~/.localai")]
-        if any(real.startswith(b) for b in BLOCKED):
-            print("  Blocked: sensitive path.\n")
-            return True
         if not os.path.isfile(path):
             print(f"  File not found: {path}\n")
             return True

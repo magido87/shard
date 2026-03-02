@@ -67,4 +67,13 @@ for d in "${dirs[@]}"; do
   rm -rf "$d" || true
 done
 
+# Kill any running llm process so it can free GPU/Metal memory cleanly.
+pid_file="$HOME/.localai/llm.pid"
+if [ -f "$pid_file" ]; then
+    pid=$(cat "$pid_file" 2>/dev/null || true)
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+        kill "$pid" 2>/dev/null || true
+    fi
+fi
+
 exit 0

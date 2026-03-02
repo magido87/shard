@@ -66,11 +66,6 @@ def _summarize_url(url: str) -> None:
 
 def _fetch_url(url: str) -> str | None:
     """Fetch text content from a URL."""
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    if parsed.scheme not in ("http", "https"):
-        print("  Only http/https URLs supported.\n")
-        return None
     try:
         import requests
         resp = requests.get(url, timeout=15, headers={

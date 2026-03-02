@@ -62,7 +62,6 @@ def _run_shell(command: str) -> None:
     """Run a shell command in subprocess."""
     print(f"\n  $ {command}")
     try:
-        # shell=True is intentional: users expect full shell syntax (pipes, &&, etc.)
         result = subprocess.run(
             command, shell=True, capture_output=True, text=True, timeout=30,
         )

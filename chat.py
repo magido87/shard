@@ -8,6 +8,7 @@ import atexit
 import gc
 import logging
 import os
+import re
 import select
 import shutil
 import signal
@@ -156,6 +157,72 @@ def _load_model_suppressed(model_key: str):
     finally:
         _restore_fds(*saved)
     return model, tokenizer
+
+
+def _load_model_with_progress(model_key: str):
+    """Load model in a background thread while showing a progress bar."""
+    import threading
+
+    entry = MODELS[model_key]
+    label = entry["label"]
+
+    result = {"model": None, "tokenizer": None, "error": None}
+    done = threading.Event()
+
+    def _do_load():
+        try:
+            from mlx_lm import load
+            result["model"], result["tokenizer"] = load(entry["id"])
+        except Exception as e:
+            result["error"] = e
+        finally:
+            done.set()
+
+    # Suppress mlx_lm noise but keep real stdout fd for our progress bar
+    null_fd = os.open(os.devnull, os.O_WRONLY)
+    real_out = os.dup(1)
+    real_err = os.dup(2)
+    os.dup2(null_fd, 1)
+    os.dup2(null_fd, 2)
+    os.close(null_fd)
+
+    thread = threading.Thread(target=_do_load, daemon=True)
+    thread.start()
+
+    BAR_W  = 30
+    FRAMES = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    tick   = 0
+
+    while not done.wait(0.08):
+        f    = FRAMES[tick % len(FRAMES)]
+        pct  = 1.0 - 1.0 / (1.0 + tick * 0.025)
+        pct  = min(pct, 0.95)
+        fill = int(BAR_W * pct)
+        bar  = "█" * fill + "░" * (BAR_W - fill)
+        line = (
+            f"\r  {ui.MG}{f}{ui.RS} {ui.GR}Loading {label}{ui.RS}"
+            f"  [{ui.AC}{bar}{ui.RS}] {int(pct * 100):>2}%  "
+        )
+        os.write(real_out, line.encode())
+        tick += 1
+
+    # Complete — full bar
+    bar  = "█" * BAR_W
+    line = (
+        f"\r\033[2K  {ui.AC}✓{ui.RS} {ui.GR}{label} loaded{ui.RS}"
+        f"  [{ui.AC}{bar}{ui.RS}] 100%\n"
+    )
+    os.write(real_out, line.encode())
+
+    # Restore fds
+    os.dup2(real_out, 1)
+    os.dup2(real_err, 2)
+    os.close(real_out)
+    os.close(real_err)
+
+    if result["error"]:
+        raise result["error"]
+    return result["model"], result["tokenizer"]
 
 
 # ── Model picker ──────────────────────────────────────────────────
@@ -958,6 +1025,8 @@ def main() -> None:
     t0   = time.time()
     MSGS = 0
 
+    model_key = CFG.get("model", "")   # sentinel — overwritten by picker; guards atexit on early exit
+
     def _save_cfg() -> None:
         if PRIVACY_MODE:
             return
@@ -1035,14 +1104,7 @@ def main() -> None:
     sys.stdout.write("\033[2J\033[H")
     sys.stdout.flush()
 
-    label = MODELS[model_key]["label"]
-    sys.stdout.write(f"  {ui.MG}⠿{ui.RS} {ui.GR}Loading {label} …{ui.RS}    ")
-    sys.stdout.flush()
-
-    model, tokenizer = _load_model_suppressed(model_key)
-
-    sys.stdout.write(f"\r\033[2K  {ui.AC}✓{ui.RS} {ui.GR}Loading {label} — done{ui.RS}\n")
-    sys.stdout.flush()
+    model, tokenizer = _load_model_with_progress(model_key)
 
     # Lazy mlx import (already loaded by mlx_lm)
     import mlx.core as mx
@@ -1234,8 +1296,13 @@ def main() -> None:
         gen_start   = time.time()
         token_count = 0
 
-        live_sampler = make_sampler(temp=TEMP)
-        highlighter  = ui.StreamHighlighter()
+        live_sampler  = make_sampler(temp=TEMP)
+        highlighter   = ui.StreamHighlighter()
+        # If the chat template pre-fills <think>, the model streams reasoning
+        # directly (no opening tag), ending with </think>.  Start the filter
+        # already inside the think block in that case.
+        _prefill_think = entry.get("think_prefill", False)
+        think_filter  = ui.ThinkFilter(start_in_think=_prefill_think)
 
         sys.stdout.write(f"\n  {ui.BD}{ui.AC2}{entry['label']}{ui.RS} {ui.GR}›{ui.RS} ")
         sys.stdout.flush()
@@ -1249,7 +1316,7 @@ def main() -> None:
             ):
                 piece        = tok.text
                 full        += piece
-                buf         += piece
+                buf         += think_filter.feed(piece)
                 token_count += 1
                 now          = time.time()
                 flush = (
@@ -1267,6 +1334,13 @@ def main() -> None:
 
             if buf:
                 out = highlighter.feed(buf)
+                if out:
+                    sys.stdout.write(out)
+                    sys.stdout.flush()
+            # Flush any buffered non-think content from the filter
+            leftover = think_filter.flush()
+            if leftover:
+                out = highlighter.feed(leftover)
                 if out:
                     sys.stdout.write(out)
                     sys.stdout.flush()
@@ -1304,11 +1378,12 @@ def main() -> None:
 
         print()
 
-        # Save assistant response to conversation history
-        conversation.append({"role": "assistant", "content": full})
+        # Save assistant response to conversation history (strip think blocks)
+        clean = re.sub(r"<think>.*?</think>", "", full, flags=re.DOTALL).strip()
+        conversation.append({"role": "assistant", "content": clean or full})
 
         # Plugin: post-process response + store for clipboard
-        plugins.set_last_response(full)
+        plugins.set_last_response(clean or full)
         plugins.run_on_response(full, stripped, plugin_ctx)
 
         log_interaction(query=stripped, answer=full, metadata={"tps": round(tps, 1)})
