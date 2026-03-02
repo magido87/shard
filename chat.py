@@ -823,10 +823,10 @@ def _pick_model(default_key: str = "dolphin"):
         row1_c = f"{dmark} {BD}{nc}{num}{RS}  {BD}{name}{RS}  {c(242)}{detail}{RS}{tag}{dl_s}"
         row1_p = " " * max(0, W - _vlen(row1_c))
 
-        print(f"{c(51)}  ║{RS}{' ' * (W - 2)}{c(51)}║{RS}")
+        print(f"{c(51)}  ║{RS}{' ' * W}{c(51)}║{RS}")
         print(f"{c(51)}  ║{RS}{row1_c}{row1_p}{c(51)}║{RS}")
 
-    print(f"{c(51)}  ║{RS}{' ' * (W - 2)}{c(51)}║{RS}")
+    print(f"{c(51)}  ║{RS}{' ' * W}{c(51)}║{RS}")
     print(f"{c(51)}  ╚{BAR}╝\n{RS}")
 
     # ── Input loop ───────────────────────────────────────────────
@@ -1040,13 +1040,18 @@ def main():
     from mlx_lm.models.cache import make_prompt_cache
     from mlx_lm.sample_utils import make_sampler
 
-    with _Spin(f"Loading {cfg['label']}"):
-        old_err, sys.stderr = sys.stderr, open(os.devnull, "w")
-        try:
-            model, tokenizer = load(MODEL_ID)
-        finally:
-            sys.stderr.close()
-            sys.stderr = old_err
+    sys.stdout.write(f"  {MG}⠿{RS} {GR}Loading {cfg['label']} …{RS}    ")
+    sys.stdout.flush()
+    _null = open(os.devnull, "w")
+    old_out, old_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = _null
+    try:
+        model, tokenizer = load(MODEL_ID)
+    finally:
+        _null.close()
+        sys.stdout, sys.stderr = old_out, old_err
+    sys.stdout.write(f"\r  {CY}✓{RS} {GR}Loading {cfg['label']} — done{RS}          \n")
+    sys.stdout.flush()
 
     cache   = make_prompt_cache(model, MAX_KV)
     sampler = make_sampler(temp=TEMP, top_p=TOP_P)
