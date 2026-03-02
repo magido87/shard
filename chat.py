@@ -1301,6 +1301,12 @@ def main() -> None:
                 messages, tokenize=False, add_generation_prompt=True
             )
 
+        # Some models (Qwen 3.5 4B/2B/9B) have templates that open <think>
+        # but never close it, causing endless reasoning dumps.  Force-close
+        # the think block so the model skips straight to answering.
+        if prompt_str.rstrip().endswith("<think>"):
+            prompt_str = prompt_str.rstrip() + "\n\n</think>\n\n"
+
         full        = ""
         buf         = ""
         last_flush  = time.time()
