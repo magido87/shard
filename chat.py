@@ -266,7 +266,7 @@ MODELS = {
 TEMP = 0.72
 TOP_P = 0.92
 PID_FILE = os.path.expanduser("~/.localai/llm.pid")
-PICK_TIMEOUT = float(os.environ.get("LOCALAI_PICK_TIMEOUT", "2.0"))
+PICK_TIMEOUT = float(os.environ.get("LOCALAI_PICK_TIMEOUT", "4.0"))
 _VOICE_API = None
 
 # ── Mode ─────────────────────────────────────────────────────────
@@ -832,7 +832,7 @@ def _pick_model(default_key: str = "dolphin"):
     # ── Input loop ───────────────────────────────────────────────
     chosen   = None
     deadline = time.time() + max(0.0, PICK_TIMEOUT)
-    def_label = available[default_key]["label"][:26]
+    def_label = available[default_key]["label"].split("·")[0].strip()
     nums_hint = " / ".join(
         f"{c(196) if available[k]['profile']=='unfiltered' else c(51)}{n}{RS}"
         for n, k in model_nums.items()
@@ -1042,15 +1042,22 @@ def main():
 
     sys.stdout.write(f"  {MG}⠿{RS} {GR}Loading {cfg['label']} …{RS}    ")
     sys.stdout.flush()
-    _null = open(os.devnull, "w")
-    old_out, old_err = sys.stdout, sys.stderr
-    sys.stdout = sys.stderr = _null
+    # Redirect at OS fd level — MLX writes warnings directly to fd 1/2,
+    # bypassing Python's sys.stdout, so Python-level redirect isn't enough.
+    _devnull_fd = os.open(os.devnull, os.O_WRONLY)
+    _saved_fd1  = os.dup(1)
+    _saved_fd2  = os.dup(2)
+    os.dup2(_devnull_fd, 1)
+    os.dup2(_devnull_fd, 2)
+    os.close(_devnull_fd)
     try:
         model, tokenizer = load(MODEL_ID)
     finally:
-        _null.close()
-        sys.stdout, sys.stderr = old_out, old_err
-    sys.stdout.write(f"\r  {CY}✓{RS} {GR}Loading {cfg['label']} — done{RS}          \n")
+        os.dup2(_saved_fd1, 1)
+        os.dup2(_saved_fd2, 2)
+        os.close(_saved_fd1)
+        os.close(_saved_fd2)
+    sys.stdout.write(f"\r\033[2K  {CY}✓{RS} {GR}Loading {cfg['label']} — done{RS}\n")
     sys.stdout.flush()
 
     cache   = make_prompt_cache(model, MAX_KV)
